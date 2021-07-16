@@ -1,0 +1,18 @@
+{
+  "dataServiceGeneratorVersion": "0.7.0",
+  "appInfo": {
+    "name": "Amplication-first",
+    "description": "",
+    "version": "fhhsdp0j",
+    "id": "ckr6yytlq14413461bs62cgn3erm",
+    "url": "https://app.amplication.com/ckr6yytlq14413461bs62cgn3erm",
+    "settings": {
+      "dbHost": "localhost",
+      "dbName": "test1",
+      "dbPassword": "admin",
+      "dbPort": 5432,
+      "dbUser": "admin",
+      "appId": "ckr6yytlq14413461bs62cgn3erm"
+    }
+  }
+}
