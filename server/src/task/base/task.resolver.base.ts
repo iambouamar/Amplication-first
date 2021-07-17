@@ -8,34 +8,32 @@ import * as gqlUserRoles from "../../auth/gqlUserRoles.decorator";
 import * as abacUtil from "../../auth/abac.util";
 import { isRecordNotFoundError } from "../../prisma.util";
 import { MetaQueryPayload } from "../../util/MetaQueryPayload";
-import { CreateUserArgs } from "./CreateUserArgs";
-import { UpdateUserArgs } from "./UpdateUserArgs";
-import { DeleteUserArgs } from "./DeleteUserArgs";
-import { UserFindManyArgs } from "./UserFindManyArgs";
-import { UserFindUniqueArgs } from "./UserFindUniqueArgs";
-import { User } from "./User";
-import { ProjectFindManyArgs } from "../../project/base/ProjectFindManyArgs";
+import { CreateTaskArgs } from "./CreateTaskArgs";
+import { UpdateTaskArgs } from "./UpdateTaskArgs";
+import { DeleteTaskArgs } from "./DeleteTaskArgs";
+import { TaskFindManyArgs } from "./TaskFindManyArgs";
+import { TaskFindUniqueArgs } from "./TaskFindUniqueArgs";
+import { Task } from "./Task";
 import { Project } from "../../project/base/Project";
-import { TaskFindManyArgs } from "../../task/base/TaskFindManyArgs";
-import { Task } from "../../task/base/Task";
-import { UserService } from "../user.service";
+import { User } from "../../user/base/User";
+import { TaskService } from "../task.service";
 
-@graphql.Resolver(() => User)
+@graphql.Resolver(() => Task)
 @common.UseGuards(gqlBasicAuthGuard.GqlBasicAuthGuard, gqlACGuard.GqlACGuard)
-export class UserResolverBase {
+export class TaskResolverBase {
   constructor(
-    protected readonly service: UserService,
+    protected readonly service: TaskService,
     protected readonly rolesBuilder: nestAccessControl.RolesBuilder
   ) {}
 
   @graphql.Query(() => MetaQueryPayload)
   @nestAccessControl.UseRoles({
-    resource: "User",
+    resource: "Task",
     action: "read",
     possession: "any",
   })
-  async _usersMeta(
-    @graphql.Args() args: UserFindManyArgs
+  async _tasksMeta(
+    @graphql.Args() args: TaskFindManyArgs
   ): Promise<MetaQueryPayload> {
     const results = await this.service.count({
       ...args,
@@ -47,41 +45,41 @@ export class UserResolverBase {
     };
   }
 
-  @graphql.Query(() => [User])
+  @graphql.Query(() => [Task])
   @nestAccessControl.UseRoles({
-    resource: "User",
+    resource: "Task",
     action: "read",
     possession: "any",
   })
-  async users(
-    @graphql.Args() args: UserFindManyArgs,
+  async tasks(
+    @graphql.Args() args: TaskFindManyArgs,
     @gqlUserRoles.UserRoles() userRoles: string[]
-  ): Promise<User[]> {
+  ): Promise<Task[]> {
     const permission = this.rolesBuilder.permission({
       role: userRoles,
       action: "read",
       possession: "any",
-      resource: "User",
+      resource: "Task",
     });
     const results = await this.service.findMany(args);
     return results.map((result) => permission.filter(result));
   }
 
-  @graphql.Query(() => User, { nullable: true })
+  @graphql.Query(() => Task, { nullable: true })
   @nestAccessControl.UseRoles({
-    resource: "User",
+    resource: "Task",
     action: "read",
     possession: "own",
   })
-  async user(
-    @graphql.Args() args: UserFindUniqueArgs,
+  async task(
+    @graphql.Args() args: TaskFindUniqueArgs,
     @gqlUserRoles.UserRoles() userRoles: string[]
-  ): Promise<User | null> {
+  ): Promise<Task | null> {
     const permission = this.rolesBuilder.permission({
       role: userRoles,
       action: "read",
       possession: "own",
-      resource: "User",
+      resource: "Task",
     });
     const result = await this.service.findOne(args);
     if (result === null) {
@@ -90,21 +88,21 @@ export class UserResolverBase {
     return permission.filter(result);
   }
 
-  @graphql.Mutation(() => User)
+  @graphql.Mutation(() => Task)
   @nestAccessControl.UseRoles({
-    resource: "User",
+    resource: "Task",
     action: "create",
     possession: "any",
   })
-  async createUser(
-    @graphql.Args() args: CreateUserArgs,
+  async createTask(
+    @graphql.Args() args: CreateTaskArgs,
     @gqlUserRoles.UserRoles() userRoles: string[]
-  ): Promise<User> {
+  ): Promise<Task> {
     const permission = this.rolesBuilder.permission({
       role: userRoles,
       action: "create",
       possession: "any",
-      resource: "User",
+      resource: "Task",
     });
     const invalidAttributes = abacUtil.getInvalidAttributes(
       permission,
@@ -118,31 +116,45 @@ export class UserResolverBase {
         .map((role: string) => JSON.stringify(role))
         .join(",");
       throw new apollo.ApolloError(
-        `providing the properties: ${properties} on ${"User"} creation is forbidden for roles: ${roles}`
+        `providing the properties: ${properties} on ${"Task"} creation is forbidden for roles: ${roles}`
       );
     }
     // @ts-ignore
     return await this.service.create({
       ...args,
-      data: args.data,
+      data: {
+        ...args.data,
+
+        project: args.data.project
+          ? {
+              connect: args.data.project,
+            }
+          : undefined,
+
+        user: args.data.user
+          ? {
+              connect: args.data.user,
+            }
+          : undefined,
+      },
     });
   }
 
-  @graphql.Mutation(() => User)
+  @graphql.Mutation(() => Task)
   @nestAccessControl.UseRoles({
-    resource: "User",
+    resource: "Task",
     action: "update",
     possession: "any",
   })
-  async updateUser(
-    @graphql.Args() args: UpdateUserArgs,
+  async updateTask(
+    @graphql.Args() args: UpdateTaskArgs,
     @gqlUserRoles.UserRoles() userRoles: string[]
-  ): Promise<User | null> {
+  ): Promise<Task | null> {
     const permission = this.rolesBuilder.permission({
       role: userRoles,
       action: "update",
       possession: "any",
-      resource: "User",
+      resource: "Task",
     });
     const invalidAttributes = abacUtil.getInvalidAttributes(
       permission,
@@ -156,14 +168,28 @@ export class UserResolverBase {
         .map((role: string) => JSON.stringify(role))
         .join(",");
       throw new apollo.ApolloError(
-        `providing the properties: ${properties} on ${"User"} update is forbidden for roles: ${roles}`
+        `providing the properties: ${properties} on ${"Task"} update is forbidden for roles: ${roles}`
       );
     }
     try {
       // @ts-ignore
       return await this.service.update({
         ...args,
-        data: args.data,
+        data: {
+          ...args.data,
+
+          project: args.data.project
+            ? {
+                connect: args.data.project,
+              }
+            : undefined,
+
+          user: args.data.user
+            ? {
+                connect: args.data.user,
+              }
+            : undefined,
+        },
       });
     } catch (error) {
       if (isRecordNotFoundError(error)) {
@@ -175,13 +201,13 @@ export class UserResolverBase {
     }
   }
 
-  @graphql.Mutation(() => User)
+  @graphql.Mutation(() => Task)
   @nestAccessControl.UseRoles({
-    resource: "User",
+    resource: "Task",
     action: "delete",
     possession: "any",
   })
-  async deleteUser(@graphql.Args() args: DeleteUserArgs): Promise<User | null> {
+  async deleteTask(@graphql.Args() args: DeleteTaskArgs): Promise<Task | null> {
     try {
       // @ts-ignore
       return await this.service.delete(args);
@@ -195,55 +221,51 @@ export class UserResolverBase {
     }
   }
 
-  @graphql.ResolveField(() => [Project])
+  @graphql.ResolveField(() => Project, { nullable: true })
   @nestAccessControl.UseRoles({
-    resource: "User",
+    resource: "Task",
     action: "read",
     possession: "any",
   })
-  async projects(
-    @graphql.Parent() parent: User,
-    @graphql.Args() args: ProjectFindManyArgs,
+  async project(
+    @graphql.Parent() parent: Task,
     @gqlUserRoles.UserRoles() userRoles: string[]
-  ): Promise<Project[]> {
+  ): Promise<Project | null> {
     const permission = this.rolesBuilder.permission({
       role: userRoles,
       action: "read",
       possession: "any",
       resource: "Project",
     });
-    const results = await this.service.findProjects(parent.id, args);
+    const result = await this.service.getProject(parent.id);
 
-    if (!results) {
-      return [];
+    if (!result) {
+      return null;
     }
-
-    return results.map((result) => permission.filter(result));
+    return permission.filter(result);
   }
 
-  @graphql.ResolveField(() => [Task])
+  @graphql.ResolveField(() => User, { nullable: true })
   @nestAccessControl.UseRoles({
-    resource: "User",
+    resource: "Task",
     action: "read",
     possession: "any",
   })
-  async tasks(
-    @graphql.Parent() parent: User,
-    @graphql.Args() args: TaskFindManyArgs,
+  async user(
+    @graphql.Parent() parent: Task,
     @gqlUserRoles.UserRoles() userRoles: string[]
-  ): Promise<Task[]> {
+  ): Promise<User | null> {
     const permission = this.rolesBuilder.permission({
       role: userRoles,
       action: "read",
       possession: "any",
-      resource: "Task",
+      resource: "User",
     });
-    const results = await this.service.findTasks(parent.id, args);
+    const result = await this.service.getUser(parent.id);
 
-    if (!results) {
-      return [];
+    if (!result) {
+      return null;
     }
-
-    return results.map((result) => permission.filter(result));
+    return permission.filter(result);
   }
 }

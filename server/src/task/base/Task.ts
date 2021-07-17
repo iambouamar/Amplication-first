@@ -1,11 +1,17 @@
 import { ObjectType, Field } from "@nestjs/graphql";
 import { ApiProperty } from "@nestjs/swagger";
-import { IsDate, IsString, IsOptional, ValidateNested } from "class-validator";
+import {
+  IsDate,
+  IsInt,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from "class-validator";
 import { Type } from "class-transformer";
 import { Project } from "../../project/base/Project";
-import { Task } from "../../task/base/Task";
+import { User } from "../../user/base/User";
 @ObjectType()
-class User {
+class Task {
   @ApiProperty({
     required: true,
   })
@@ -16,14 +22,14 @@ class User {
 
   @ApiProperty({
     required: false,
-    type: String,
+    type: Number,
   })
-  @IsString()
+  @IsInt()
   @IsOptional()
-  @Field(() => String, {
+  @Field(() => Number, {
     nullable: true,
   })
-  firstName!: string | null;
+  estimation!: number | null;
 
   @ApiProperty({
     required: true,
@@ -35,6 +41,15 @@ class User {
 
   @ApiProperty({
     required: false,
+    type: () => Project,
+  })
+  @ValidateNested()
+  @Type(() => Project)
+  @IsOptional()
+  project?: Project | null;
+
+  @ApiProperty({
+    required: false,
     type: String,
   })
   @IsString()
@@ -42,35 +57,7 @@ class User {
   @Field(() => String, {
     nullable: true,
   })
-  lastName!: string | null;
-
-  @ApiProperty({
-    required: false,
-    type: () => [Project],
-  })
-  @ValidateNested()
-  @Type(() => Project)
-  @IsOptional()
-  projects?: Array<Project>;
-
-  @ApiProperty({
-    required: true,
-    type: [String],
-  })
-  @IsString({
-    each: true,
-  })
-  @Field(() => [String])
-  roles!: Array<string>;
-
-  @ApiProperty({
-    required: false,
-    type: () => [Task],
-  })
-  @ValidateNested()
-  @Type(() => Task)
-  @IsOptional()
-  tasks?: Array<Task>;
+  title!: string | null;
 
   @ApiProperty({
     required: true,
@@ -81,11 +68,12 @@ class User {
   updatedAt!: Date;
 
   @ApiProperty({
-    required: true,
-    type: String,
+    required: false,
+    type: () => User,
   })
-  @IsString()
-  @Field(() => String)
-  username!: string;
+  @ValidateNested()
+  @Type(() => User)
+  @IsOptional()
+  user?: User | null;
 }
-export { User };
+export { Task };
